@@ -7,6 +7,7 @@ public class GameController : MonoBehaviour {
   public Text[] buttonList;
   public Text gameOverText;
   public GameObject gameOverPanel;
+  public GameObject restartButton;
 
   private string playerSide;
   private int moveCount;
@@ -17,14 +18,32 @@ public class GameController : MonoBehaviour {
     {
       button.GetComponentInParent<GridSpace>().SetGameController(this);
     }
+    InitGameState();
+  }
+
+  private void InitGameState()
+  {
     playerSide = "X";
     moveCount = 0;
     gameOverPanel.SetActive(false);
+    restartButton.SetActive(false);
   }
 
   public string GetPlayerSide()
   {
     return playerSide;
+  }
+
+  public void RestartGame()
+  {
+    InitGameState();
+    SetBoardInteractable(true);
+    for (int i = 0; i < buttonList.Length; i++)
+    {
+      buttonList[i].text = "";
+    }
+    gameOverPanel.SetActive(false);
+    restartButton.SetActive(false);
   }
 
   public void EndTurn()
@@ -54,18 +73,24 @@ public class GameController : MonoBehaviour {
 
   public void GameOver()
   {
-    foreach (Text button in buttonList)
-    {
-      button.GetComponentInParent<Button>().interactable = false;
-    }
     gameOverPanel.SetActive(true);
+    restartButton.SetActive(true);
     if (Win())
     {
       gameOverText.text = playerSide + " Wins!";
+      SetBoardInteractable(false);
     }
     else
     {
       gameOverText.text = "Draw!";
+    }
+  }
+
+  private void SetBoardInteractable(bool toggle)
+  {
+    foreach (Text button in buttonList)
+    {
+      button.GetComponentInParent<Button>().interactable = toggle;
     }
   }
 
