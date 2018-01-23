@@ -5,7 +5,11 @@ using UnityEngine.UI;
 public class GameController : MonoBehaviour {
 
   public Text[] buttonList;
+  public Text gameOverText;
+  public GameObject gameOverPanel;
+
   private string playerSide;
+  private int moveCount;
 
   void Awake()
   {
@@ -14,6 +18,8 @@ public class GameController : MonoBehaviour {
       button.GetComponentInParent<GridSpace>().SetGameController(this);
     }
     playerSide = "X";
+    moveCount = 0;
+    gameOverPanel.SetActive(false);
   }
 
   public string GetPlayerSide()
@@ -23,11 +29,17 @@ public class GameController : MonoBehaviour {
 
   public void EndTurn()
   {
-    if (Win())
+    moveCount += 1;
+    if (IsGameEnd())
     {
       GameOver();
     }
     ChangeSide();
+  }
+
+  private bool IsGameEnd()
+  {
+    return Win() || moveCount >= 9;
   }
 
   private bool Win()
@@ -45,6 +57,15 @@ public class GameController : MonoBehaviour {
     foreach (Text button in buttonList)
     {
       button.GetComponentInParent<Button>().interactable = false;
+    }
+    gameOverPanel.SetActive(true);
+    if (Win())
+    {
+      gameOverText.text = playerSide + " Wins!";
+    }
+    else
+    {
+      gameOverText.text = "Draw!";
     }
   }
 
