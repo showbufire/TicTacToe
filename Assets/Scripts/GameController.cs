@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,25 @@ public class GameController : MonoBehaviour {
 
   private string playerSide;
   private int moveCount;
+
+  [Serializable]
+  public class Player
+  {
+    public Image panel;
+    public Text text;
+  }
+
+  [Serializable]
+  public class PlayerColor
+  {
+    public Color panelColor;
+    public Color textColor;
+  }
+
+  public Player playerX;
+  public Player playerO;
+  public PlayerColor activePlayerColor;
+  public PlayerColor inactivePlayerColor;
 
   void Awake()
   {
@@ -27,6 +47,15 @@ public class GameController : MonoBehaviour {
     moveCount = 0;
     gameOverPanel.SetActive(false);
     restartButton.SetActive(false);
+    SetPlayerColors(playerX, playerO);
+  }
+
+  private void SetPlayerColors(Player activePlayer, Player inactivePlayer)
+  {
+    activePlayer.panel.color = activePlayerColor.panelColor;
+    activePlayer.text.color = activePlayerColor.textColor;
+    inactivePlayer.panel.color = inactivePlayerColor.panelColor;
+    inactivePlayer.text.color = inactivePlayerColor.textColor;
   }
 
   public string GetPlayerSide()
@@ -53,7 +82,10 @@ public class GameController : MonoBehaviour {
     {
       GameOver();
     }
-    ChangeSide();
+    else
+    {
+      ChangeSide();
+    }
   }
 
   private bool IsGameEnd()
@@ -99,10 +131,12 @@ public class GameController : MonoBehaviour {
     if (playerSide == "X")
     {
       playerSide = "O";
+      SetPlayerColors(playerO, playerX);
     }
     else
     {
       playerSide = "X";
+      SetPlayerColors(playerX, playerO);
     }
   }
 }
