@@ -34,4 +34,8 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+
+# specific
 Assets/Photon Unity Networking/Demos
+TicTacToe.exe
+TicTacToe_Data/

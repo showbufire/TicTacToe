@@ -1,14 +1,17 @@
-﻿using System;
+﻿using Photon;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameController : MonoBehaviour {
+public class GameController : PunBehaviour {
 
   public Text[] buttonList;
   public Text gameOverText;
   public GameObject gameOverPanel;
   public GameObject restartButton;
+  public GameObject gameBoard;
+  public GameObject connectionPanel;
 
   private string playerSide;
   private int moveCount;
@@ -32,7 +35,46 @@ public class GameController : MonoBehaviour {
   public PlayerColor activePlayerColor;
   public PlayerColor inactivePlayerColor;
 
-  void Awake()
+  private void Awake()
+  {
+    connectionPanel.SetActive(true);
+    gameBoard.SetActive(false);
+  }
+
+  public override void OnJoinedRoom()
+  {
+    Debug.Log("On Joined Room");
+
+    if (PhotonNetwork.room.PlayerCount == 2)
+    {
+      StartGame();
+    }
+    else
+    {
+      ToastManager toastManager = FindObjectOfType<ToastManager>();
+      toastManager.Toast("Connected, Waiting for other player to join...");
+    }
+  }
+
+  public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
+  {
+    Debug.Log("Other player arrived");
+
+    if (PhotonNetwork.room.PlayerCount == 2)
+    {
+      StartGame();
+    }
+  }
+
+  private void StartGame()
+  {
+    Debug.Log("Game Started");
+    connectionPanel.SetActive(false);
+    gameBoard.SetActive(true);
+    SetUp();
+  }
+
+  public void SetUp()
   {
     foreach (Text button in buttonList)
     {
