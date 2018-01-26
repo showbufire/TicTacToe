@@ -52,7 +52,7 @@ public class GameController : PunBehaviour {
     else
     {
       ToastManager toastManager = FindObjectOfType<ToastManager>();
-      toastManager.Toast("Connected, Waiting for other player to join...");
+      toastManager.Toast("Connected, waiting for other player to join...");
     }
   }
 
@@ -69,13 +69,12 @@ public class GameController : PunBehaviour {
   private void StartGame()
   {
     Debug.Log("Game Started");
+    ToastManager toastManager = FindObjectOfType<ToastManager>();
+    //toastManager.Clear();
+    toastManager.Toast("You are player " + PhotonNetwork.player.ID + " with name " + PhotonNetwork.player.NickName);
+
     connectionPanel.SetActive(false);
     gameBoard.SetActive(true);
-    SetUp();
-  }
-
-  public void SetUp()
-  {
     foreach (Text button in buttonList)
     {
       button.GetComponentInParent<GridSpace>().SetGameController(this);

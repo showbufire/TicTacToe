@@ -13,5 +13,10 @@ class ToastManager : MonoBehaviour
   {
     toastBox.text = msg;
   }
+
+  public void Clear()
+  {
+    toastBox.text = "";
+  }
 }
 
