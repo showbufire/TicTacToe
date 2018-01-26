@@ -5,8 +5,39 @@ using UnityEngine.UI;
 public class Connect : PunBehaviour
 {
   public InputField usernameInput;
+  public GameObject gameControllerObj;
+  private GameController gameController;
 
   private const string AppVersion = "0.1";
+
+  void Awake()
+  {
+    gameController = gameControllerObj.GetComponent<GameController>();
+  }
+
+  public override void OnJoinedRoom()
+  {
+    Debug.Log("On Joined Room");
+    if (PhotonNetwork.room.PlayerCount == 2)
+    {
+      gameController.StartGame();
+    }
+    else
+    {
+      ToastManager toastManager = FindObjectOfType<ToastManager>();
+      toastManager.Toast("Connected, waiting for other player to join...");
+    }
+  }
+
+  public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
+  {
+    Debug.Log("Other player arrived");
+
+    if (PhotonNetwork.room.PlayerCount == 2)
+    {
+      gameController.StartGame();
+    }
+  }
 
   public void ConnectToServer()
   {

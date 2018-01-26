@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameController : PunBehaviour {
+public class GameController : UnityEngine.MonoBehaviour {
 
   public Text[] buttonList;
   public Text gameOverText;
@@ -13,7 +13,8 @@ public class GameController : PunBehaviour {
   public GameObject gameBoard;
   public GameObject connectionPanel;
 
-  private string playerSide;
+  private string localSide;
+  private string remoteSide;
   private int moveCount;
 
   [Serializable]
@@ -30,48 +31,22 @@ public class GameController : PunBehaviour {
     public Color textColor;
   }
 
-  public Player playerX;
-  public Player playerO;
+  public Player localPlayer;
+  public Player remotePlayer;
   public PlayerColor activePlayerColor;
   public PlayerColor inactivePlayerColor;
 
   private void Awake()
   {
-    connectionPanel.SetActive(true);
     gameBoard.SetActive(false);
+    connectionPanel.SetActive(true);
   }
 
-  public override void OnJoinedRoom()
-  {
-    Debug.Log("On Joined Room");
-
-    if (PhotonNetwork.room.PlayerCount == 2)
-    {
-      StartGame();
-    }
-    else
-    {
-      ToastManager toastManager = FindObjectOfType<ToastManager>();
-      toastManager.Toast("Connected, waiting for other player to join...");
-    }
-  }
-
-  public override void OnPhotonPlayerConnected(PhotonPlayer newPlayer)
-  {
-    Debug.Log("Other player arrived");
-
-    if (PhotonNetwork.room.PlayerCount == 2)
-    {
-      StartGame();
-    }
-  }
-
-  private void StartGame()
+  public void StartGame()
   {
     Debug.Log("Game Started");
     ToastManager toastManager = FindObjectOfType<ToastManager>();
-    //toastManager.Clear();
-    toastManager.Toast("You are player " + PhotonNetwork.player.ID + " with name " + PhotonNetwork.player.NickName);
+    toastManager.Clear();
 
     connectionPanel.SetActive(false);
     gameBoard.SetActive(true);
@@ -84,24 +59,60 @@ public class GameController : PunBehaviour {
 
   private void InitGameState()
   {
-    playerSide = "X";
+    localSide = PhotonNetwork.isMasterClient ? "X" : "O";
+    remoteSide = PhotonNetwork.isMasterClient ? "O" : "X";
+    localPlayer.text.text = localSide;
+    remotePlayer.text.text = remoteSide;
     moveCount = 0;
     gameOverPanel.SetActive(false);
     restartButton.SetActive(false);
-    SetPlayerColors(playerX, playerO);
+    SetPlayerColors();
+    SetBoardInteractable(localSide == GetCurrentSide());
   }
 
-  private void SetPlayerColors(Player activePlayer, Player inactivePlayer)
+  public void OnClickButton(Text button)
   {
+    int position = -1;
+    for (int i = 0; i < buttonList.Length; i++)
+    {
+      if (buttonList[i] == button)
+      {
+        position = i;
+        break;
+      }
+    }
+    if (position >= 0)
+    {
+      PhotonView photonView = GetComponent<PhotonView>();
+      photonView.RPC("OnClickPosition", PhotonTargets.All, position, localSide);
+    }
+  }
+
+  [PunRPC]
+  void OnClickPosition(int position, string side)
+  {
+    GridSpace gridSpace = buttonList[position].GetComponentInParent<GridSpace>();
+    gridSpace.SetSpaceSide(side);
+    EndTurn();
+  }
+
+  private string GetCurrentSide()
+  {
+    if (moveCount % 2 == 0)
+    {
+      return "X";
+    }
+    return "O";
+  }
+
+  private void SetPlayerColors()
+  {
+    Player activePlayer = GetCurrentSide() == localSide ? localPlayer : remotePlayer;
+    Player inactivePlayer = GetCurrentSide() == localSide ? remotePlayer : localPlayer;
     activePlayer.panel.color = activePlayerColor.panelColor;
     activePlayer.text.color = activePlayerColor.textColor;
     inactivePlayer.panel.color = inactivePlayerColor.panelColor;
     inactivePlayer.text.color = inactivePlayerColor.textColor;
-  }
-
-  public string GetPlayerSide()
-  {
-    return playerSide;
   }
 
   public void RestartGame()
@@ -116,22 +127,21 @@ public class GameController : PunBehaviour {
     restartButton.SetActive(false);
   }
 
-  public void EndTurn()
+  private void EndTurn()
   {
-    moveCount += 1;
-    if (IsGameEnd())
+    if (Win())
     {
       GameOver();
+      return;
     }
-    else
+    moveCount += 1;
+    if (moveCount >= 9)
     {
-      ChangeSide();
+      GameOver();
+      return;
     }
-  }
-
-  private bool IsGameEnd()
-  {
-    return Win() || moveCount >= 9;
+    SetPlayerColors();
+    SetBoardInteractable(GetCurrentSide() == localSide);
   }
 
   private bool Win()
@@ -141,7 +151,8 @@ public class GameController : PunBehaviour {
 
   private bool Win(int x, int y, int z)
   {
-    return buttonList[x].text == playerSide && buttonList[y].text == playerSide && buttonList[z].text == playerSide;
+    string currentSide = GetCurrentSide();
+    return buttonList[x].text == currentSide && buttonList[y].text == currentSide && buttonList[z].text == currentSide;
   }
 
   public void GameOver()
@@ -150,7 +161,7 @@ public class GameController : PunBehaviour {
     restartButton.SetActive(true);
     if (Win())
     {
-      gameOverText.text = playerSide + " Wins!";
+      gameOverText.text = GetCurrentSide() + " Wins!";
       SetBoardInteractable(false);
     }
     else
@@ -164,20 +175,6 @@ public class GameController : PunBehaviour {
     foreach (Text button in buttonList)
     {
       button.GetComponentInParent<Button>().interactable = toggle;
-    }
-  }
-
-  private void ChangeSide()
-  {
-    if (playerSide == "X")
-    {
-      playerSide = "O";
-      SetPlayerColors(playerO, playerX);
-    }
-    else
-    {
-      playerSide = "X";
-      SetPlayerColors(playerX, playerO);
     }
   }
 }
