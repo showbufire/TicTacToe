@@ -1,6 +1,5 @@
 ﻿using Photon;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,6 +11,7 @@ public class GameController : UnityEngine.MonoBehaviour {
   public GameObject restartButton;
   public GameObject gameBoard;
   public GameObject connectionPanel;
+  public Text gameInfo;
 
   private string localSide;
   private string remoteSide;
@@ -54,7 +54,26 @@ public class GameController : UnityEngine.MonoBehaviour {
     {
       button.GetComponentInParent<GridSpace>().SetGameController(this);
     }
+    SetGameInfo();
     InitGameState();
+  }
+
+  private void SetGameInfo()
+  {
+    string opponentName = GetOpponentName();
+    gameInfo.text = "You against " + opponentName;
+  }
+
+  private string GetOpponentName()
+  {
+    foreach (var player in PhotonNetwork.playerList)
+    {
+      if (player.ID != PhotonNetwork.player.ID)
+      {
+        return player.NickName;
+      }
+    }
+    return "God";
   }
 
   private void InitGameState()
@@ -89,7 +108,7 @@ public class GameController : UnityEngine.MonoBehaviour {
   }
 
   [PunRPC]
-  void OnClickPosition(int position, string side)
+  private void OnClickPosition(int position, string side)
   {
     GridSpace gridSpace = buttonList[position].GetComponentInParent<GridSpace>();
     gridSpace.SetSpaceSide(side);
@@ -117,8 +136,26 @@ public class GameController : UnityEngine.MonoBehaviour {
 
   public void RestartGame()
   {
+    if (PhotonNetwork.isMasterClient)
+    {
+      PhotonView photonView = GetComponent<PhotonView>();
+      photonView.RPC("RestartGameRPC", PhotonTargets.All);
+    }
+    else
+    {
+      ToastManager toastManager = FindObjectOfType<ToastManager>();
+      toastManager.Toast("Only the master client can restart a game!");
+    }
+  }
+
+  [PunRPC]
+  private void RestartGameRPC()
+  {
+    Debug.Log("Game Restarted");
+    ToastManager toastManager = FindObjectOfType<ToastManager>();
+    toastManager.Clear();
+
     InitGameState();
-    SetBoardInteractable(true);
     for (int i = 0; i < buttonList.Length; i++)
     {
       buttonList[i].text = "";
@@ -161,13 +198,20 @@ public class GameController : UnityEngine.MonoBehaviour {
     restartButton.SetActive(true);
     if (Win())
     {
-      gameOverText.text = GetCurrentSide() + " Wins!";
-      SetBoardInteractable(false);
+      if (localSide == GetCurrentSide())
+      {
+        gameOverText.text = "You Won!";
+      }
+      else
+      {
+        gameOverText.text = "You Lost:(";
+      }      
     }
     else
     {
       gameOverText.text = "Draw!";
     }
+    SetBoardInteractable(false);
   }
 
   private void SetBoardInteractable(bool toggle)
